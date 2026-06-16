@@ -1,0 +1,77 @@
+# Full local stack: PostGIS + NestJS API + Next.js web.
+# Usage:
+#   1. Put your Mapbox token in a root .env file: NEXT_PUBLIC_MAPBOX_TOKEN=pk....
+#   2. docker compose up --build
+# Then: web on http://localhost:3000, GraphQL on http://localhost:4000/graphql
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: forest_bd_viewer
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Runs once on first init of an empty data volume. Enables PostGIS/uuid;
+      # tables are created by TypeORM synchronize. (repo scripts.sql is not
+      # clean-runnable: it uses geometry before CREATE EXTENSION and dupes users)
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d forest_bd_viewer"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: forest_bd_viewer
+      JWT_SECRET: dev-secret-change-me
+      JWT_EXPIRATION: 7d
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages/database:/app/packages/database
+      # Keep installed deps / build output from the image (don't let host shadow them).
+      - api-root-modules:/app/node_modules
+      - /app/apps/api/node_modules
+      - /app/packages/database/node_modules
+    # Build the shared entities package, then run Nest in watch mode.
+    command: sh -c "npm run build --workspace=@forest/database && npm run start:dev --workspace=api"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/graphql
+      NEXT_PUBLIC_MAPBOX_TOKEN: ${NEXT_PUBLIC_MAPBOX_TOKEN:-}
+      NEXT_PUBLIC_GEOSERVER_WORKSPACE: prod
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app/apps/web
+      - web-root-modules:/app/node_modules
+      - /app/apps/web/node_modules
+    command: npm run dev --workspace=web
+
+volumes:
+  db-data:
+  api-root-modules:
+  web-root-modules:
