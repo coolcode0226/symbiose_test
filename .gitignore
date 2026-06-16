@@ -1,0 +1,86 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Optional OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Build outputs
+# =========================
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# =========================
+# Next.js (apps/web)
+# =========================
+.next/
+out/
+
+# =========================
+# NestJS (apps/api)
+# =========================
+apps/api/dist/
+apps/api/coverage/
+
+# =========================
+# Database package build
+# =========================
+packages/database/dist/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Temporary
+# =========================
+tmp/
+temp/
+
+# =========================
+# Testing
+# =========================
+jest-report/
