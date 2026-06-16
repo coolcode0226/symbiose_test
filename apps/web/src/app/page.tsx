@@ -14,9 +14,21 @@ export default function Home() {
 
   // Check auth status on mount
   // @ts-ignore
-  const { loading: meLoading } = useQuery(ME_QUERY, {
+  const { data, loading: meLoading } = useQuery(ME_QUERY, {
     skip: typeof window === 'undefined',
   });
+
+  // Resolve the loading state once the `me` query settles.
+  useEffect(() => {
+    if (meLoading) return;
+    // @ts-ignore
+    const me = data?.me;
+    if (me) {
+      setAuth(me, localStorage.getItem('token') || '');
+    } else {
+      logout();
+    }
+  }, [data, meLoading, setAuth, logout]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !meLoading) {
