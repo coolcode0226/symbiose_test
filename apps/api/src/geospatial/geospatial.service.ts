@@ -52,19 +52,19 @@ export class GeospatialService {
     }
 
     async getForestPlots(filters: ForestPlotsFilterInput) {
+        // Explicit aliases: getRawMany() would otherwise return keys like `plot_id`, leaving the
+        // GraphQL ForestPlotType fields null. Alias each to the GraphQL field name.
         const query = this.forestRepo
             .createQueryBuilder('plot')
-            .select([
-                'plot.id',
-                'plot.codeRegion',
-                'plot.codeDepartement',
-                'plot.codeCommune',
-                'plot.lieuDit',
-                'plot.essences',
-                'plot.surfaceHectares',
-                'plot.typeForet',
-                'ST_AsGeoJSON(plot.geom)::json as geometry',
-            ]);
+            .select('plot.id', 'id')
+            .addSelect('plot.codeRegion', 'codeRegion')
+            .addSelect('plot.codeDepartement', 'codeDepartement')
+            .addSelect('plot.codeCommune', 'codeCommune')
+            .addSelect('plot.lieuDit', 'lieuDit')
+            .addSelect('plot.essences', 'essences')
+            .addSelect('plot.surfaceHectares', 'surfaceHectares')
+            .addSelect('plot.typeForet', 'typeForet')
+            .addSelect('ST_AsGeoJSON(plot.geom)::json', 'geometry');
 
         if (filters.regionCode) {
             query.andWhere('plot.codeRegion = :regionCode', { regionCode: filters.regionCode });

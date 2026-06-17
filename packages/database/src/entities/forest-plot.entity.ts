@@ -1,9 +1,10 @@
 import { Entity, Column, PrimaryColumn, Index } from 'typeorm';
 
 @Entity('forest_plots')
-/*@Index(['code_region'])
-@Index(['code_departement'])
-@Index(['code_commune'])*/
+// Admin-code lookups (filter dropdowns: SELECT DISTINCT ...) hit these columns.
+@Index(['codeRegion'])
+@Index(['codeDepartement'])
+@Index(['codeCommune'])
 export class ForestPlot {
     @PrimaryColumn()
     id!: string;
@@ -20,6 +21,8 @@ export class ForestPlot {
     @Column({ name: 'lieu_dit', nullable: true })
     lieuDit?: string;
 
+    // GiST index for ST_Intersects / ST_MakeEnvelope viewport-bounds queries.
+    @Index('idx_forest_plots_geom', { spatial: true })
     @Column('geometry', {
         spatialFeatureType: 'MultiPolygon',
         srid: 4326,

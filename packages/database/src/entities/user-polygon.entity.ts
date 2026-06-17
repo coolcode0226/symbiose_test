@@ -7,10 +7,10 @@ export class UserPolygon {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column()
+    @Column({ name: 'user_id' })
     userId!: string;
 
-    @ManyToOne(() => User, user => user.id)
+    @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
     user?: User;
 
