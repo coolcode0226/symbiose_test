@@ -8,6 +8,7 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GeospatialModule } from './geospatial/geospatial.module';
+import { PolygonsModule } from './polygons/polygons.module';
 import { User, ForestPlot, UserPolygon } from '@forest/database';
 import { Request, Response } from 'express';
 @Module({
@@ -37,6 +38,7 @@ import { Request, Response } from 'express';
     AuthModule,
     UsersModule,
     GeospatialModule,
+    PolygonsModule,
   ],
 })
 export class AppModule {}

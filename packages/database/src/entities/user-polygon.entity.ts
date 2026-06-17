@@ -20,10 +20,10 @@ export class UserPolygon {
     @Column('geometry', { spatialFeatureType: 'MultiPolygon', srid: 4326 })
     geometry!: any;
 
-    @Column('double precision')
+    @Column('double precision', { name: 'area_hectares' })
     areaHectares!: number;
 
-    @Column('jsonb', { nullable: true })
+    @Column('jsonb', { nullable: true, name: 'analysis_results' })
     analysisResults?: {
         plotCount?: number;
         speciesDistribution?: Array<{
@@ -33,6 +33,7 @@ export class UserPolygon {
         }>;
         forestTypes?: string[];
         totalForestArea?: number;
+        coveragePercentage?: number;
     } | null;
 
     @Column({
@@ -42,6 +43,6 @@ export class UserPolygon {
     })
     status!: AnalysisStatus;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt!: Date;
 }
