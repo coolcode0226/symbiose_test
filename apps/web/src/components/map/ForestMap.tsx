@@ -21,7 +21,7 @@ import { SavedPolygonsList } from './SavedPolygonsList';
 import { LayerControlPanel } from './LayerControlPanel';
 import { FeatureQueryPopup } from './FeatureQueryPopup';
 
-import { Layers, LogOut, Map as MapIcon, Satellite, Mountain, Sun, Moon } from 'lucide-react';
+import { LogOut, Map as MapIcon, Satellite, Mountain, Sun, Moon } from 'lucide-react';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
@@ -113,10 +113,8 @@ export function ForestMap() {
             zoom: initialZoom,
         });
 
-        // Bottom-left: the right edge is occupied by app panels (LayerControlPanel, Cadastre/Logout,
-        // Base Map) which would otherwise sit on top of these controls and intercept their clicks.
-        map.current.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
-        map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-left');
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
         // Initialize Mapbox Draw
         draw.current = new MapboxDraw({
@@ -124,7 +122,7 @@ export function ForestMap() {
             controls: { polygon: true, trash: true },
             defaultMode: 'simple_select'
         });
-        map.current.addControl(draw.current, 'bottom-left');
+        map.current.addControl(draw.current, 'top-right');
 
         // Track zoom for layer visibility
         const updateZoom = () => {
@@ -479,8 +477,6 @@ export function ForestMap() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wmsLayers, mapLoaded, currentZoom]);
 
-    const cadastreVisible = wmsLayers.find((l) => l.id === 'cadastre')?.visible ?? false;
-
     const handleLogout = () => {
         logout();
         window.location.href = '/auth';
@@ -593,19 +589,9 @@ export function ForestMap() {
                 </div>
             )}
 
-            {/* Top Right Controls */}
-            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                <button
-                    onClick={() => handleToggleLayer('cadastre')}
-                    title="Cadastre parcels (visible at zoom 15+)"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg border transition-all text-sm ${
-                        cadastreVisible ? 'bg-[#0b4a59] text-white border-[#0b4a59]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                    <Layers size={18} />
-                    <span className="font-medium">Cadastre</span>
-                </button>
-
+            {/* Top Right Controls — shifted left of the Mapbox control column (right edge) so these
+                buttons don't sit on top of and intercept clicks for the zoom/fullscreen controls. */}
+            <div className="absolute top-4 right-16 z-10 flex flex-col gap-2">
                 <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 px-3 py-2 bg-white text-red-600 rounded-lg shadow-lg border border-gray-200 hover:bg-red-50 transition-all text-sm"

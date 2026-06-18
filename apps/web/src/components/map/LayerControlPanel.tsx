@@ -27,7 +27,7 @@ export function LayerControlPanel({
     };
 
     return (
-        <div className="absolute top-20 right-4 z-10">
+        <div className="absolute bottom-4 left-4 z-10">
             {/* Draw Polygon Button - SEPARATE FROM LAYERS */}
             <button
                 onClick={onDrawStart}

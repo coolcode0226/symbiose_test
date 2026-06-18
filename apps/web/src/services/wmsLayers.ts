@@ -58,17 +58,6 @@ export const WMS_LAYERS: WMSLayerConfig[] = [
         color: 'rgb(102,255,0)',
         description: 'Forest inventory data',
     },
-    {
-        id: 'cadastre',
-        name: 'Cadastre',
-        layerName: 'cadastre', // Adjust if different
-        minZoom: 15,
-        maxZoom: 22,
-        opacity: 0.8,
-        visible: false,
-        color: '#8B4513',
-        description: 'Land parcels (zoom > 15)',
-    },
 ];
 
 export const buildWMSUrl = (layerName: string): string => {
