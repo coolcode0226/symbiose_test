@@ -62,6 +62,11 @@ const PLOTS: SeedPlot[] = [
     { id: 'seed-52-02', codeRegion: '52', codeDepartement: '44', codeCommune: '44109', lieuDit: 'Forêt du Gâvre', essences: ['Pin maritime'], surfaceHectares: 14.5, typeForet: 'Forêt fermée de conifères', lng: -1.70, lat: 47.52, sizeDeg: 0.02 },
     { id: 'seed-52-03', codeRegion: '52', codeDepartement: '44', codeCommune: '44020', lieuDit: 'Bois de la Chabossière', essences: ['Chêne', 'Châtaignier', 'Douglas'], surfaceHectares: 11.0, typeForet: 'Forêt fermée mixte', lng: -1.65, lat: 47.28, sizeDeg: 0.017 },
     { id: 'seed-52-04', codeRegion: '52', codeDepartement: '49', codeCommune: '49007', lieuDit: 'Forêt de Longuenée', essences: ['Chêne', 'Frêne'], surfaceHectares: 19.6, typeForet: 'Forêt fermée de feuillus', lng: -0.65, lat: 47.55, sizeDeg: 0.024 },
+
+    // Larger "massif" patches — visible at region zoom and easy to draw over for a demo.
+    { id: 'seed-28-05', codeRegion: '28', codeDepartement: '14', codeCommune: '14118', lieuDit: 'Massif de Caen', essences: ['Chêne', 'Hêtre', 'Frêne'], surfaceHectares: 120.0, typeForet: 'Forêt fermée de feuillus', lng: 0.30, lat: 49.05, sizeDeg: 0.07 },
+    { id: 'seed-24-05', codeRegion: '24', codeDepartement: '45', codeCommune: '45234', lieuDit: "Massif d'Orléans", essences: ['Pin sylvestre', 'Chêne', 'Châtaignier'], surfaceHectares: 160.0, typeForet: 'Forêt fermée mixte', lng: 2.25, lat: 47.92, sizeDeg: 0.08 },
+    { id: 'seed-52-05', codeRegion: '52', codeDepartement: '44', codeCommune: '44109', lieuDit: 'Massif du Gâvre', essences: ['Pin maritime', 'Chêne', 'Douglas'], surfaceHectares: 140.0, typeForet: 'Forêt fermée mixte', lng: -1.72, lat: 47.50, sizeDeg: 0.075 },
 ];
 
 async function main(): Promise<void> {

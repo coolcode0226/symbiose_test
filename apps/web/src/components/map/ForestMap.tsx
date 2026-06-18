@@ -10,6 +10,7 @@ import { useMapStore } from '@/store/mapStore';
 import { useAuthStore } from '@/store/authStore';
 import { UPDATE_MAP_STATE } from '@/graphql/auth';
 import { GET_MY_POLYGONS, SAVE_POLYGON_MUTATION } from '@/graphql/polygons';
+import { GET_FOREST_PLOTS } from '@/graphql/geospatial';
 import { queryAllLayers } from '@/services/wmsFeatureInfo';
 import { WMS_LAYERS, getWMSTileUrl, WMSLayerConfig } from '@/services/wmsLayers';
 
@@ -89,6 +90,14 @@ export function ForestMap() {
     const [updateMapState] = useMutation(UPDATE_MAP_STATE);
     const [savePolygon] = useMutation(SAVE_POLYGON_MUTATION);
 
+    // Forest plots present in the DB (what the analysis can actually measure — distinct from the
+    // remote WMS forest tiles), loaded scoped to the current viewport so we never over-fetch.
+    const [viewBounds, setViewBounds] = useState<{ minLng: number; minLat: number; maxLng: number; maxLat: number } | null>(null);
+    const { data: forestPlotsData } = useQuery(GET_FOREST_PLOTS, {
+        variables: { filters: { bounds: viewBounds } },
+        skip: !viewBounds,
+    });
+
     // Initialize map
     useEffect(() => {
         if (!mapContainer.current) return;
@@ -122,10 +131,18 @@ export function ForestMap() {
             updateWMSLayerVisibility(newZoom);
         };
 
+        // Track the visible extent so the DB forest-plots query stays scoped to the viewport.
+        const updateBounds = () => {
+            const b = map.current!.getBounds();
+            if (!b) return;
+            setViewBounds({ minLng: b.getWest(), minLat: b.getSouth(), maxLng: b.getEast(), maxLat: b.getNorth() });
+        };
+
         map.current.on('load', () => {
             setMapLoaded(true);
             addWMSLayers(map.current!);
             updateZoom();
+            updateBounds();
         });
 
         map.current.on('zoom', updateZoom);
@@ -145,6 +162,7 @@ export function ForestMap() {
 
         // Save map state on move
         map.current.on('moveend', () => {
+            updateBounds();
             const center = map.current!.getCenter();
             const newZoom = map.current!.getZoom();
             setViewState(center.lng, center.lat, newZoom);
@@ -201,6 +219,7 @@ export function ForestMap() {
         // Re-add WMS layers after style change
         map.current.once('style.load', () => {
             addWMSLayers(map.current!);
+            renderForestPlots(map.current!, (forestPlotsData as any)?.forestPlots);
             if (savedPolygonsData?.myPolygons) {
                 displaySavedPolygonsOnMap(map.current!, savedPolygonsData.myPolygons, false);
             }
@@ -378,6 +397,63 @@ export function ForestMap() {
             console.error('Error adding polygons:', error);
         }
     };
+
+    // Render the DB forest plots (analyzable forest) as a green overlay so users can see — and draw
+    // over — exactly what the polygon analysis will measure.
+    const renderForestPlots = (mapInstance: mapboxgl.Map, plots: any[] | undefined) => {
+        if (!plots) return;
+        if (!mapInstance.isStyleLoaded()) {
+            setTimeout(() => renderForestPlots(mapInstance, plots), 200);
+            return;
+        }
+
+        const features = plots
+            .map((p) => {
+                let geometry = p.geometry;
+                if (typeof geometry === 'string') {
+                    try { geometry = JSON.parse(geometry); } catch { return null; }
+                }
+                if (!geometry?.coordinates) return null;
+                return {
+                    type: 'Feature',
+                    geometry,
+                    properties: {
+                        essences: (p.essences || []).join(', '),
+                        type: p.typeForet || '',
+                        surface: p.surfaceHectares || 0,
+                    },
+                };
+            })
+            .filter(Boolean);
+
+        const geojson = { type: 'FeatureCollection', features } as any;
+
+        const existing = mapInstance.getSource('db-forest-plots') as mapboxgl.GeoJSONSource | undefined;
+        if (existing) {
+            existing.setData(geojson);
+            return;
+        }
+
+        mapInstance.addSource('db-forest-plots', { type: 'geojson', data: geojson });
+        mapInstance.addLayer({
+            id: 'db-forest-plots-fill',
+            type: 'fill',
+            source: 'db-forest-plots',
+            paint: { 'fill-color': '#16a34a', 'fill-opacity': 0.35 },
+        });
+        mapInstance.addLayer({
+            id: 'db-forest-plots-outline',
+            type: 'line',
+            source: 'db-forest-plots',
+            paint: { 'line-color': '#15803d', 'line-width': 1.5 },
+        });
+    };
+
+    // Re-render forest plots whenever the viewport-scoped query returns new data.
+    useEffect(() => {
+        if (!map.current || !mapLoaded) return;
+        renderForestPlots(map.current, (forestPlotsData as any)?.forestPlots);
+    }, [forestPlotsData, mapLoaded]);
 
     const handleLogout = () => {
         logout();
