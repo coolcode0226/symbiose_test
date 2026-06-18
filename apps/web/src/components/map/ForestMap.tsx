@@ -113,8 +113,10 @@ export function ForestMap() {
             zoom: initialZoom,
         });
 
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+        // Bottom-left: the right edge is occupied by app panels (LayerControlPanel, Cadastre/Logout,
+        // Base Map) which would otherwise sit on top of these controls and intercept their clicks.
+        map.current.addControl(new mapboxgl.NavigationControl(), 'bottom-left');
+        map.current.addControl(new mapboxgl.FullscreenControl(), 'bottom-left');
 
         // Initialize Mapbox Draw
         draw.current = new MapboxDraw({
@@ -122,7 +124,7 @@ export function ForestMap() {
             controls: { polygon: true, trash: true },
             defaultMode: 'simple_select'
         });
-        map.current.addControl(draw.current, 'top-right');
+        map.current.addControl(draw.current, 'bottom-left');
 
         // Track zoom for layer visibility
         const updateZoom = () => {
