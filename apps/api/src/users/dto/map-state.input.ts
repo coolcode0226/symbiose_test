@@ -38,4 +38,8 @@ export class MapStateInput {
     @IsObject()
     @IsOptional()
     filters?: MapFiltersInput;
+
+    @Field(() => [String], { nullable: true })
+    @IsOptional()
+    activeLayers?: string[];
 }

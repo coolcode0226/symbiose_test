@@ -68,6 +68,7 @@ input MapFiltersInput {
 }
 
 input MapStateInput {
+  activeLayers: [String!]
   filters: MapFiltersInput
   lat: Float!
   lng: Float!
@@ -126,6 +127,7 @@ type UserModel {
   email: String!
   firstName: String
   id: ID!
+  lastActiveLayers: [String!]
   lastFilters: JSON
   lastLat: Float
   lastLng: Float

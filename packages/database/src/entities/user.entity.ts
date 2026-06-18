@@ -34,6 +34,10 @@ export class User {
     @Column('jsonb', { nullable: true })
     lastFilters?: Record<string, any>;
 
+    // Visible WMS layer ids, persisted as part of the workspace.
+    @Column('jsonb', { nullable: true })
+    lastActiveLayers?: string[];
+
     @CreateDateColumn()
     createdAt!: Date;
 

@@ -98,6 +98,13 @@ export function ForestMap() {
         skip: !viewBounds,
     });
 
+    // The moveend handler is registered once; read live filters/layers through refs so persisted
+    // workspace state reflects the current UI rather than the values captured at registration.
+    const filtersRef = useRef(filters);
+    const wmsLayersRef = useRef(wmsLayers);
+    useEffect(() => { filtersRef.current = filters; }, [filters]);
+    useEffect(() => { wmsLayersRef.current = wmsLayers; }, [wmsLayers]);
+
     // Initialize map
     useEffect(() => {
         if (!mapContainer.current) return;
@@ -174,12 +181,14 @@ export function ForestMap() {
                             lng: center.lng,
                             lat: center.lat,
                             zoom: newZoom,
-                            filters,
-                            activeLayers: wmsLayers.filter(l => l.visible).map(l => l.id),
+                            filters: filtersRef.current,
+                            activeLayers: wmsLayersRef.current.filter(l => l.visible).map(l => l.id),
                         },
                     },
+                    // @ts-ignore - Apollo v4 types result.data as unknown
                 }).then((result) => {
-                    updateUser(result.data.updateMapState);
+                    // @ts-ignore
+                    if (result.data?.updateMapState) updateUser(result.data.updateMapState);
                 }).catch(console.error);
             }
         });
@@ -454,6 +463,26 @@ export function ForestMap() {
         if (!map.current || !mapLoaded) return;
         renderForestPlots(map.current, (forestPlotsData as any)?.forestPlots);
     }, [forestPlotsData, mapLoaded]);
+
+    // Restore persisted workspace (filters + visible layers) once the user and map are both ready.
+    useEffect(() => {
+        if (!user || !mapLoaded) return;
+        if (user.lastFilters && Object.keys(user.lastFilters).length > 0) {
+            setFilters(user.lastFilters as any);
+        }
+        if (Array.isArray(user.lastActiveLayers) && user.lastActiveLayers.length > 0) {
+            const active = new Set(user.lastActiveLayers);
+            setWmsLayers((prev) => prev.map((l) => ({ ...l, visible: active.has(l.id) })));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, mapLoaded]);
+
+    // Apply WMS visibility to the map whenever the layer set changes (covers restore + toggles).
+    useEffect(() => {
+        if (!map.current || !mapLoaded) return;
+        updateWMSLayerVisibility(currentZoom);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wmsLayers, mapLoaded, currentZoom]);
 
     const handleLogout = () => {
         logout();

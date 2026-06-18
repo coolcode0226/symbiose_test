@@ -10,6 +10,7 @@ interface User {
     lastLat?: number;
     lastZoom?: number;
     lastFilters?: Record<string, any>;
+    lastActiveLayers?: string[];
 }
 
 interface AuthState {
@@ -49,6 +50,10 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'auth-storage',
+            // Persist only the token. isLoading/isAuthenticated/user are transient and must be
+            // re-derived from the `me` query on load — persisting them caused auth flicker and let a
+            // stale isAuthenticated render the map before the server confirmed the session.
+            partialize: (state) => ({ token: state.token }),
         }
     )
 );
