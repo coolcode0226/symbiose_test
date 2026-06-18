@@ -11,24 +11,16 @@ import Image from 'next/image';
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
     const router = useRouter();
-    const { isAuthenticated, isLoading } = useAuthStore();
+    const { isAuthenticated } = useAuthStore();
 
+    // The auth screen performs no async auth check, so it must NOT gate on the store's `isLoading`
+    // (only the home route resolves that, via the `me` query). Gating here hung the page after
+    // logout. Just redirect away once authenticated; otherwise show the form immediately.
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            router.push('/');
+        if (isAuthenticated) {
+            router.replace('/');
         }
-    }, [isAuthenticated, isLoading, router]);
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-                <div className="flex items-center gap-3 text-[#0b4a59]">
-                    <div className="w-6 h-6 border-2 border-[#0b4a59] border-t-transparent rounded-full animate-spin" />
-                    Loading...
-                </div>
-            </div>
-        );
-    }
+    }, [isAuthenticated, router]);
 
     return (
         <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 to-blue-50">
