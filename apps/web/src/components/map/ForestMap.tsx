@@ -54,13 +54,6 @@ const BASE_LAYERS = {
     }
 };
 
-// Hardcoded regions for navigation
-const REGIONS = [
-    { code: 'NORMANDIE', name: 'Normandie', lat: 49.1829, lng: 0.3700, zoom: 7 },
-    { code: 'PAYS_DE_LA_LOIRE', name: 'Pays de la Loire', lat: 47.7633, lng: -0.3297, zoom: 7 },
-    { code: 'CENTRE_VAL_DE_LOIRE', name: 'Centre-Val de Loire', lat: 47.7516, lng: 1.6751, zoom: 7 }
-];
-
 export function ForestMap() {
     const [drawnGeometry, setDrawnGeometry] = useState<any>(null);
     const [showSaveModal, setShowSaveModal] = useState(false);
@@ -83,7 +76,7 @@ export function ForestMap() {
     const map = useRef<mapboxgl.Map | null>(null);
     const draw = useRef<MapboxDraw | null>(null);
 
-    const { lng, lat, zoom, filters, showCadastre, setViewState, setShowCadastre, setFilters } = useMapStore();
+    const { lng, lat, zoom, filters, setViewState, setFilters } = useMapStore();
     const { user, logout, updateUser } = useAuthStore();
 
     const { data: savedPolygonsData, refetch: refetchPolygons } = useQuery(GET_MY_POLYGONS);
@@ -484,6 +477,8 @@ export function ForestMap() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wmsLayers, mapLoaded, currentZoom]);
 
+    const cadastreVisible = wmsLayers.find((l) => l.id === 'cadastre')?.visible ?? false;
+
     const handleLogout = () => {
         logout();
         window.location.href = '/auth';
@@ -599,9 +594,10 @@ export function ForestMap() {
             {/* Top Right Controls */}
             <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
                 <button
-                    onClick={() => setShowCadastre(!showCadastre)}
+                    onClick={() => handleToggleLayer('cadastre')}
+                    title="Cadastre parcels (visible at zoom 15+)"
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg border transition-all text-sm ${
-                        showCadastre ? 'bg-[#0b4a59] text-white border-[#0b4a59]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                        cadastreVisible ? 'bg-[#0b4a59] text-white border-[#0b4a59]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                     <Layers size={18} />

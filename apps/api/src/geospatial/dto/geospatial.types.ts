@@ -1,6 +1,5 @@
 import { ObjectType, Field, Float, Int } from '@nestjs/graphql';
-import { GraphQLScalarType } from 'graphql';
-import { Kind } from 'graphql/language';
+import { GraphQLScalarType, valueFromASTUntyped } from 'graphql';
 
 export const GeoJSONScalar = new GraphQLScalarType({
     name: 'GeoJSON',
@@ -11,11 +10,10 @@ export const GeoJSONScalar = new GraphQLScalarType({
     parseValue(value) {
         return value;
     },
-    parseLiteral(ast) {
-        if (ast.kind === Kind.OBJECT) {
-            return ast;
-        }
-        return null;
+    // Convert the literal AST into a plain JS value. The previous impl returned the raw AST node,
+    // so inline-literal geometry args were unusable (only variables, via parseValue, worked).
+    parseLiteral(ast, variables) {
+        return valueFromASTUntyped(ast, variables ?? undefined);
     },
 });
 

@@ -39,17 +39,3 @@ export const GET_FOREST_PLOTS = gql`
     }
   }
 `;
-
-export const ANALYZE_POLYGON = gql`
-  mutation AnalyzePolygon($polygon: PolygonInput!) {
-    analyzePolygon(polygon: $polygon) {
-      totalAreaHectares
-      parcelCount
-      essencesDistribution {
-        essence
-        areaHectares
-        percentage
-      }
-    }
-  }
-`;

@@ -12,10 +12,8 @@ interface MapState {
     lat: number;
     zoom: number;
     filters: MapFilters;
-    showCadastre: boolean;
     setViewState: (lng: number, lat: number, zoom: number) => void;
     setFilters: (filters: MapFilters) => void;
-    setShowCadastre: (show: boolean) => void;
     resetFilters: () => void;
 }
 
@@ -25,15 +23,12 @@ export const useMapStore = create<MapState>((set) => ({
     lat: 46.2276,
     zoom: 5,
     filters: {},
-    showCadastre: false,
 
     setViewState: (lng, lat, zoom) => set({ lng, lat, zoom }),
 
     setFilters: (filters) => set((state) => ({
         filters: { ...state.filters, ...filters }
     })),
-
-    setShowCadastre: (show) => set({ showCadastre: show }),
 
     resetFilters: () => set({
         filters: {},
