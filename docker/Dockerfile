@@ -10,7 +10,7 @@ RUN apt-get update \
 WORKDIR /app
 
 # Copy only manifests first so `npm install` is cached across source changes.
-COPY package.json package-lock.json turbo.json ./
+COPY package.json package-lock.json* turbo.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/database/package.json packages/database/package.json

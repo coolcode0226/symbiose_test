@@ -85,6 +85,12 @@ Ordered to land foundations first. Each maps to an exercise requirement.
 7. **Tests** (`apps/api`, Jest): the analysis aggregation, the auth flow, and the polygons service —
    4 suites, 12 tests. Run `docker compose exec api npm run test --workspace=api`.
 
+8. **Apollo Server 4 → 5 (deps).** Bumped the api to `@apollo/server@^5` to clear the `@nestjs/apollo@13`
+   peer conflict. A bump alone doesn't suffice — `@nestjs/apollo` drags in a v4 copy via the deprecated
+   graphql-playground plugin — so a root `overrides: { "@apollo/server": "^5.0.0" }` forces a single v5
+   (API verified booting on it). Also made the Dockerfile's `package-lock.json` COPY a glob so a clean
+   clone (the lockfile is gitignored) still builds.
+
 ---
 
 ## Part 3 — bounded service extraction: polygon analysis
