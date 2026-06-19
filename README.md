@@ -68,7 +68,11 @@ Ordered to land foundations first. Each maps to an exercise requirement.
 3. **Part 2.2 — geospatial loading/filtering.** Wired the previously-dead `forestPlots` query into the
    map, **scoped to the viewport** (`bounds` envelope → loads only in-view plots, on the GiST index),
    and rendered the DB plots as a visible "analyzable forest" layer so users can see and draw over
-   exactly what the analysis measures.
+   exactly what the analysis measures. Also **decoupled the GeoJSON overlays from the slow remote WMS
+   tiles**: both the saved-polygon and forest-plot layers were gated behind `map.isStyleLoaded()`,
+   which returns `false` while *any* source (including the remote raster tiles) is still loading — so
+   a user's own DB data only appeared after WMS finished. Removed the gate (callers already guarantee
+   the style is loaded via the `load`/`style.load` events); local data now paints immediately.
 
 4. **Part 2.3 — persisted workspace/user-state.** Persist & restore map view, filters, and active
    layers (`lastActiveLayers` added end-to-end); restore on login; `partialize`d the auth store to

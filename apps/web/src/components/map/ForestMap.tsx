@@ -347,25 +347,16 @@ export function ForestMap() {
         });
     };
 
-    // Display saved polygons
+    // Render saved polygons as soon as the map style is ready — independent of the slow remote WMS
+    // tiles, so the user's own data never waits on third-party tile loads.
     useEffect(() => {
+        // @ts-ignore - Apollo v4 types result.data as unknown
+        if (!map.current || !mapLoaded || !savedPolygonsData?.myPolygons) return;
         // @ts-ignore
-        if (!map.current || !savedPolygonsData?.myPolygons || !mapLoaded) return;
-
-        const timer = setTimeout(() => {
-            // @ts-ignore
-            displaySavedPolygonsOnMap(map.current!, savedPolygonsData.myPolygons, false);
-        }, 500);
-
-        return () => clearTimeout(timer);
+        displaySavedPolygonsOnMap(map.current, savedPolygonsData.myPolygons);
     }, [savedPolygonsData, mapLoaded]);
 
     const displaySavedPolygonsOnMap = (mapInstance: mapboxgl.Map, polygons: any[], fitBounds: boolean = false) => {
-        if (!mapInstance.isStyleLoaded()) {
-            setTimeout(() => displaySavedPolygonsOnMap(mapInstance, polygons, fitBounds), 200);
-            return;
-        }
-
         // Clean up existing
         if (mapInstance.getLayer('saved-polygons-fill')) mapInstance.removeLayer('saved-polygons-fill');
         if (mapInstance.getLayer('saved-polygons-outline')) mapInstance.removeLayer('saved-polygons-outline');
@@ -449,10 +440,8 @@ export function ForestMap() {
     // over — exactly what the polygon analysis will measure.
     const renderForestPlots = (mapInstance: mapboxgl.Map, plots: any[] | undefined) => {
         if (!plots) return;
-        if (!mapInstance.isStyleLoaded()) {
-            setTimeout(() => renderForestPlots(mapInstance, plots), 200);
-            return;
-        }
+        // No isStyleLoaded() gate — see displaySavedPolygonsOnMap: it would couple this overlay to
+        // remote WMS tile loading. Callers already ensure the style is ready before this runs.
 
         const features = plots
             .map((p) => {
