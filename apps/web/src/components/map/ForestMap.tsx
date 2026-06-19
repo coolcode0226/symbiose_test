@@ -25,6 +25,17 @@ import { LogOut, Map as MapIcon, Satellite, Mountain, Sun, Moon } from 'lucide-r
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
+// Bounding box of a GeoJSON Polygon/MultiPolygon, used to fit the camera to a saved polygon.
+function geometryBounds(geometry: { coordinates: unknown }): mapboxgl.LngLatBounds {
+    const bounds = new mapboxgl.LngLatBounds();
+    const extend = (coords: any): void => {
+        if (typeof coords[0] === 'number') bounds.extend(coords);
+        else coords.forEach(extend);
+    };
+    extend(geometry.coordinates);
+    return bounds;
+}
+
 // Base layer configurations
 const BASE_LAYERS = {
     satellite: {
@@ -59,6 +70,7 @@ export function ForestMap() {
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const [showResults, setShowResults] = useState(false);
+    const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
     const [mapLoaded, setMapLoaded] = useState(false);
     const [currentZoom, setCurrentZoom] = useState(5);
     const [wmsLayers, setWmsLayers] = useState<WMSLayerConfig[]>(WMS_LAYERS);
@@ -75,6 +87,7 @@ export function ForestMap() {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
     const draw = useRef<MapboxDraw | null>(null);
+    const highlightedPolygonId = useRef<string | null>(null);
 
     const { lng, lat, zoom, filters, setViewState, setFilters } = useMapStore();
     const { user, logout, updateUser } = useAuthStore();
@@ -379,26 +392,58 @@ export function ForestMap() {
                 geometry: p.geometry,
                 properties: { name: p.name, area: p.areaHectares, status: p.status },
             })),
-        };
+        } as any;
 
         try {
             mapInstance.addSource('saved-polygons', { type: 'geojson', data: geojson });
+            // Paint reacts to feature-state so the highlighted polygon stands out without rebuilding layers.
+            const selected: mapboxgl.ExpressionSpecification = ['boolean', ['feature-state', 'selected'], false];
+            const fillOpacity: mapboxgl.ExpressionSpecification = ['case', selected, 0.4, 0.15];
+            const lineColor: mapboxgl.ExpressionSpecification = ['case', selected, '#22d3ee', '#0b4a59'];
+            const lineWidth: mapboxgl.ExpressionSpecification = ['case', selected, 3.5, 2];
             mapInstance.addLayer({
                 id: 'saved-polygons-fill',
                 type: 'fill',
                 source: 'saved-polygons',
-                paint: { 'fill-color': '#0b4a59', 'fill-opacity': 0.2 },
+                paint: { 'fill-color': '#0b4a59', 'fill-opacity': fillOpacity },
             });
             mapInstance.addLayer({
                 id: 'saved-polygons-outline',
                 type: 'line',
                 source: 'saved-polygons',
-                paint: { 'line-color': '#0b4a59', 'line-width': 2, 'line-dasharray': [2, 2] },
+                paint: { 'line-color': lineColor, 'line-width': lineWidth, 'line-dasharray': [2, 2] },
             });
         } catch (error) {
             console.error('Error adding polygons:', error);
         }
     };
+
+    // "Show on map": fly to a saved polygon and mark it as the selected one.
+    const handleHighlightPolygon = (polygon: any) => {
+        let geometry = polygon.geometry;
+        if (typeof geometry === 'string') {
+            try { geometry = JSON.parse(geometry); } catch { return; }
+        }
+        if (!map.current || !geometry?.coordinates) return;
+
+        map.current.fitBounds(geometryBounds(geometry), { padding: 80, maxZoom: 14, duration: 800 });
+        setSelectedPolygonId(polygon.id);
+    };
+
+    // Drive the feature-state highlight; re-applies after the source is rebuilt on data changes.
+    useEffect(() => {
+        const mapInstance = map.current;
+        if (!mapInstance || !mapLoaded || !mapInstance.getSource('saved-polygons')) return;
+
+        const previous = highlightedPolygonId.current;
+        if (previous && previous !== selectedPolygonId) {
+            mapInstance.setFeatureState({ source: 'saved-polygons', id: previous }, { selected: false });
+        }
+        if (selectedPolygonId) {
+            mapInstance.setFeatureState({ source: 'saved-polygons', id: selectedPolygonId }, { selected: true });
+        }
+        highlightedPolygonId.current = selectedPolygonId;
+    }, [selectedPolygonId, mapLoaded, savedPolygonsData]);
 
     // Render the DB forest plots (analyzable forest) as a green overlay so users can see — and draw
     // over — exactly what the polygon analysis will measure.
@@ -522,10 +567,14 @@ export function ForestMap() {
                 isDrawing={isDrawing}
             />
 
-            <SavedPolygonsList onSelectPolygon={(p) => {
-                setAnalysisResult(p);
-                setShowResults(true);
-            }} />
+            <SavedPolygonsList
+                onSelectPolygon={(p) => {
+                    setAnalysisResult(p);
+                    setShowResults(true);
+                }}
+                onHighlightPolygon={handleHighlightPolygon}
+                selectedPolygonId={selectedPolygonId}
+            />
 
             {/* Save Polygon Modal */}
             {showSaveModal && drawnGeometry && (

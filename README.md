@@ -129,10 +129,13 @@ stays in the main app — only the *analysis* is the boundary, not storage.
 
 ## Trade-offs & simplifications
 
-- **Synthetic seed instead of real IGN data.** The provided shapefiles were 0 bytes. I seeded a handful
-  of realistic plots across 3 regions rather than building the full `shp2pgsql`/reprojection import.
-  Consequence: analysis is only meaningful over the seeded patches — the green forest *tiles* you see
-  everywhere come from a **remote GeoServer (WMS)** that isn't in our DB, so drawing over them returns 0.
+- **Synthetic seed instead of real IGN data — the one gap I want to call out plainly.** The map and the
+  analysis read from **two different sources**. What you *see* (the green forest tiles, everywhere) is
+  streamed from a **remote GeoServer (WMS)** and is never in our DB. What we *analyze* is only the
+  **synthetic seed** in `forest_plots` (the provided shapefiles were 0 bytes). So **what you see ≠ what
+  you analyze**: drawing over WMS-only tiles returns 0, and analysis is meaningful only over the seeded
+  patches. This is deliberate scoping, not an oversight — the seam is clean (analyzer untouched), and the
+  fix is purely a data step (next section), not a code change.
 - **`synchronize` kept for dev; no migrations.** Faster to iterate; flagged as a known risk.
 - **Region selector is navigation-only.** After removing the broken admin-area cascade, it focuses the
   map on a region; it does not yet filter the data (left as a deliberate, documented scope cut).
@@ -142,7 +145,11 @@ stays in the main app — only the *analysis* is the boundary, not storage.
 
 ## What's unfinished / next in production
 
-- **Load real BD Forêt data** into `forest_plots` so the analyzable layer matches the WMS tiles.
+- **Close the see-vs-analyze gap: ingest the WFS into PostGIS.** The single highest-leverage next step.
+  Pull the BD Forêt features from the same GeoServer over **WFS** (`GetFeature`, GeoJSON/4326) into
+  `forest_plots`, so the analyzable layer *is* what the map shows. The analyzer never changes — only the
+  data source does. (Scoped out here as a small risk: it depends on the external GeoServer being up at
+  ingest time.)
 - **Migrations** (drop `synchronize`), and make `packages/database/scripts.sql` clean-runnable.
 - **GraphQL codegen** to type Apollo results and retire the remaining `@ts-ignore`s.
 - **Auth hardening**: move the JWT out of `localStorage`, server-side session invalidation, login
