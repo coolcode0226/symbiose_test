@@ -14,6 +14,10 @@ trade-offs, and what's left. The full **Part 1 technical review** is in
 
 ---
 
+## Loom Vedio
+
+https://www.loom.com/share/436acd624c984ea6914b635f6977b89f
+
 ## Setup
 
 ### Prerequisites
